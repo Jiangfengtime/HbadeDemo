@@ -9,6 +9,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,16 +35,23 @@ public class HelloBase {
         getAdmin();
         /* ************************ 元数据操作 ************************ */
         // 创建表
-//        createTable("t1", "cf1", "cf2");
+//        createTable("t6");
 
         // 删除表
 //        deleteTable("t1");
+
+        // 获取所有列族
+        // getColumnFamily("t1");
+
+        // 判断是否包含列族
+        // isExsitsColumnFamily("t1", "cf1");
+
 
         // 添加列族
 //        addColumnFamily("t1", "cf3", "cf4");
 
         // 删除列族
-//         deleteColumnFamily(tableName, "cf3", "cf4");
+         deleteColumnFamily("t1", "cf3", "cf4");
 
         // 修改表
         // modifyTable(cf1,table, tableName);
@@ -55,7 +64,7 @@ public class HelloBase {
 //        getScann("t1");
 
 //        getData("t1", "r1", "cf1", "name");
-        getData("t5", "r1", "cf1", "name", 3);
+//        getData("t5", "r1", "cf1", "name", 3);
 
 
 
@@ -126,6 +135,11 @@ public class HelloBase {
             System.out.println(table_name + "表已存在!!!");
             return;
         }
+        // 如果没有传列族的参数
+        if (cfs == null || cfs.length ==0 ){
+            System.out.println("创建表时列族不能为空!!!");
+            return;
+        }
         // 用表名的字符串来生成一个TableName的类
         TableName tn = TableName.valueOf(table_name);
         // 生成HTableDescriptor类
@@ -160,7 +174,7 @@ public class HelloBase {
     }
 
     /**
-     *
+     * 修改表属性
      * @param cf1
      * @param table
      * @param tableName
@@ -182,6 +196,45 @@ public class HelloBase {
     }
 
     /**
+     * 获取表中包含的列族
+     * @param table_name
+     * @throws IOException
+     */
+    public static List getColumnFamily(String table_name) throws IOException {
+        Table table = conn.getTable(TableName.valueOf(table_name));
+        ArrayList<String> list = new ArrayList<String>();
+        HTableDescriptor tableDescriptor = table.getTableDescriptor();
+        for (HColumnDescriptor descriptor: tableDescriptor.getColumnFamilies()){
+            list.add(descriptor.getNameAsString());
+        }
+
+        // System.out.println(list);
+        return list;
+    }
+
+    /**
+     * 判断表中是否包含某一列族
+     * @param table_name
+     * @param cf
+     * @return
+     * @throws IOException
+     */
+    public static boolean isExsitsColumnFamily(String table_name, String cf) throws IOException {
+        if (!isExistsTable(table_name)){
+            // System.out.println(table_name + "表不存在!!!");
+            return false;
+        }
+        List lists = getColumnFamily(table_name);
+        if (lists.contains(cf)){
+            // System.out.println(table_name + "表中包含" + cf + "列族");
+            return true;
+        } else {
+            // System.out.println(table_name + "表中不包含" + cf + "列族");
+            return false;
+        }
+    }
+
+    /**
      * 添加列族
      * @param table_name    表名
      * @param cfs           列族列表
@@ -192,10 +245,13 @@ public class HelloBase {
             return;
         }
 
-
-
         TableName tableName = TableName.valueOf(table_name);
         for (String cf: cfs){
+            if (isExsitsColumnFamily(table_name, cf)){
+                System.out.println("添加失败!" + table_name + "表中已存在" + cf + "列族!!!");
+                return;
+            }
+
             HColumnDescriptor newCf = new HColumnDescriptor(cf);
             admin.addColumn(tableName, newCf);
         }
@@ -214,6 +270,16 @@ public class HelloBase {
             return;
         }
         TableName tableName = TableName.valueOf(table_name);
+
+        for (String cf: cfs){
+            if(!isExsitsColumnFamily(table_name, cf)){
+                System.out.println("删除失败!" + table_name + "表中没有" + cf + "列族!!!");
+                return;
+            }
+        }
+
+
+
         admin.disableTable(tableName);
         for (String cf: cfs){
             admin.deleteColumn(tableName, cf.getBytes("UTF-8"));
