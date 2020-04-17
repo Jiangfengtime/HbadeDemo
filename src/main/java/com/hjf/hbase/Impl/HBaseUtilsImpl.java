@@ -43,7 +43,7 @@ public class HBaseUtilsImpl{
         HBaseUtilsImpl hbu = new HBaseUtilsImpl();
 
         // 获取所有表
-//        hbu.getAllTables();
+        hbu.getAllTables();
 
         // 获取指定表的表结构
 //        hbu.descTable("user_info");
@@ -62,7 +62,7 @@ public class HBaseUtilsImpl{
         // hbu.getAllTables();
 
         // 插入数据
-        hbu.putData("people", "01", "name", "name", "Tom",System.currentTimeMillis());
+//        hbu.putData("people", "01", "name", "name", "Tom",System.currentTimeMillis());
 //         hbu.getAllTables();
 
         conn.close();
@@ -349,7 +349,6 @@ public class HBaseUtilsImpl{
             HColumnDescriptor columnFamilyName = new HColumnDescriptor(familyName);
             tableDescriptor.addFamily(columnFamilyName);
             admin.createTable(tableDescriptor);
-
         }
 
         Table table = conn.getTable(name);
